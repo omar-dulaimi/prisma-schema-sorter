@@ -10,6 +10,7 @@
     "codecov",
     "commitlint",
     "datasource",
+    "datasources",
     "dependabot",
     "editorconfig",
     "esnext",
