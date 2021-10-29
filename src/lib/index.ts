@@ -1,0 +1,70 @@
+import { readFile, writeFile } from 'fs-extra';
+
+import { PrismaSchemaSectionType } from '../types';
+
+/**
+ * Sort the prisma schema found at the given path in ascending order.
+ *
+ * ### Example (es module)
+ * ```js
+ * import { sortPrismaSchema } from 'prisma-schema-sorter'
+ * await sortPrismaSchema("./prisma/schema.prisma")
+ * // => Success
+ * ```
+ *
+ * ### Example (commonjs)
+ * ```js
+ * var sortPrismaSchema = require('prisma-schema-sorter').sortPrismaSchema;
+ * sortPrismaSchema().then();
+ * // => Success
+ * ```
+ * @param path - path to the prisma schema
+ */
+export const sortPrismaSchema = async (path: string) => {
+  try {
+    const schema = await readFile(path, {
+      encoding: 'utf-8',
+    });
+    const schemaSections: string[] = schema.split('\n\n');
+    const generators: PrismaSchemaSectionType[] = [];
+    const dataSources: PrismaSchemaSectionType[] = [];
+    const models: PrismaSchemaSectionType[] = [];
+    const enums: PrismaSchemaSectionType[] = [];
+    schemaSections.forEach((section) => {
+      if (section.includes('generator')) {
+        generators.push({
+          name: section.split(' ')[1].trim(),
+          value: section,
+        });
+      } else if (section.includes('datasource')) {
+        dataSources.push({
+          name: section.split(' ')[1].trim(),
+          value: section,
+        });
+      } else if (section.includes('model')) {
+        models.push({
+          name: section.split(' ')[1].trim(),
+          value: section,
+        });
+      } else if (section.includes('enum')) {
+        enums.push({
+          name: section.split(' ')[1].trim(),
+          value: section,
+        });
+      }
+    });
+
+    models.sort((a, b) =>
+      a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1
+    );
+    const sortedSections = [...generators, ...dataSources, ...models, ...enums];
+    await writeFile(
+      path,
+      sortedSections.map((section) => section.value).join('\n\n')
+    );
+    console.log('Success.');
+  } catch (error) {
+    console.log('Failed.');
+    console.log(error);
+  }
+};
