@@ -6,6 +6,7 @@
   "typings": "build/main/index.d.ts",
   "module": "build/module/index.js",
   "repository": "https://github.com/omar-dulaimi/prisma-schema-sorter",
+  "homepage": "https://omar-dulaimi.github.io/prisma-schema-sorter/index.html",
   "license": "MIT",
   "author": "Omar Dulaimi",
   "keywords": [
