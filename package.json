@@ -8,7 +8,7 @@
   "repository": "https://github.com/omar-dulaimi/prisma-schema-sorter",
   "license": "MIT",
   "author": "Omar Dulaimi",
-  "keywords": [],
+  "keywords": ["prisma", "prisma-schema"],
   "scripts": {
     "commit": "git commit -m ''",
     "build": "run-p build:*",
