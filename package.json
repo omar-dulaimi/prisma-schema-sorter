@@ -33,6 +33,7 @@
     "version": "standard-version",
     "reset-hard": "git clean -dfx && git reset --hard && npm i",
     "prepare-release": "run-s reset-hard test doc:html version doc:publish",
+    "release": "npm publish",
     "prepare": "husky install"
   },
   "engines": {
