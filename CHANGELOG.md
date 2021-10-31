@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/omar-dulaimi/prisma-schema-sorter/compare/v1.1.5...v1.2.0) (2021-10-31)
+
+
+### Features
+
+* **main:** sort datasources, generators and enums ([b682d3a](https://github.com/omar-dulaimi/prisma-schema-sorter/commit/b682d3a0cfb230c087836bc0ec13c7d03b7c1ced))
+
 ### [1.1.5](https://github.com/omar-dulaimi/prisma-schema-sorter/compare/v1.1.4...v1.1.5) (2021-10-29)
 
 ### [1.1.4](https://github.com/omar-dulaimi/prisma-schema-sorter/compare/v1.1.2...v1.1.4) (2021-10-29)
