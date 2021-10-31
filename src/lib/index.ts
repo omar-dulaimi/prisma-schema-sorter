@@ -2,6 +2,8 @@ import { readFile, writeFile } from 'fs-extra';
 
 import { PrismaSchemaSectionType } from '../types';
 
+import { ascendingSorter } from './../helpers';
+
 /**
  * Sort the prisma schema found at the given path in ascending order.
  *
@@ -54,9 +56,10 @@ export const sortPrismaSchema = async (path: string) => {
       }
     });
 
-    models.sort((a, b) =>
-      a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1
-    );
+    generators.sort(ascendingSorter);
+    dataSources.sort(ascendingSorter);
+    models.sort(ascendingSorter);
+    enums.sort(ascendingSorter);
     const sortedSections = [...generators, ...dataSources, ...models, ...enums];
     await writeFile(
       path,
