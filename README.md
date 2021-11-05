@@ -9,9 +9,11 @@ Prisma 2 tool to sort schema models, enums, generators and datasources
 ## Table of Contents
 
 - [Installation](#installing)
-- [Examples](#examples)
-  - [ES Module](#es-module)
-  - [CommonJS](#commonjs)
+- [Usage](#usage)
+  - [Using the CLI](#using-the-cli)
+  - [Programmatically](#programmatically)
+    - [ES Module](#es-module)
+    - [CommonJS](#commonjs)
 
 ## Installation
 
@@ -27,7 +29,41 @@ Using yarn:
 $ yarn add prisma-schema-sorter
 ```
 
-## Examples
+# Usage
+
+You can use the library in multiple ways as described below.
+
+## 1- Using the CLI:
+
+With the CLI, you get the same functionality but with greater flexibility. You could run the command as a one-off every now and then from the terminal like this:
+<br>
+<br>
+
+```bash
+$ npx prisma-schema-sorter sort --schema="./prisma/schema.prisma"
+```
+
+You could also keep the command as an npm script to run it as part of your workflow:
+
+```js
+{
+    "scripts": {
+      "sort-schema": "npx prisma-schema-sorter sort --schema='./prisma/schema.prisma'"
+    }
+}
+```
+
+Or even without the `npx` prefix:
+
+```js
+{
+    "scripts": {
+      "sort-schema": "prisma-schema-sorter sort --schema='./prisma/schema.prisma'"
+    }
+}
+```
+
+## 2- Programmatically:
 
 ### ES Module
 
