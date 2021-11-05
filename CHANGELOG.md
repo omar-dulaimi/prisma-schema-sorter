@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.3.2](https://github.com/omar-dulaimi/prisma-schema-sorter/compare/v1.3.1...v1.3.2) (2021-11-05)
+
+
+### Bug Fixes
+
+* **package.json:** fix library binary path ([1939689](https://github.com/omar-dulaimi/prisma-schema-sorter/commit/19396893f7f25c2e86df219d2b405d9c4788e0ca))
+
 ### [1.3.1](https://github.com/omar-dulaimi/prisma-schema-sorter/compare/v1.3.0...v1.3.1) (2021-11-05)
 
 ## [1.3.0](https://github.com/omar-dulaimi/prisma-schema-sorter/compare/v1.2.0...v1.3.0) (2021-11-05)
