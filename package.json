@@ -13,7 +13,7 @@
     "prisma",
     "prisma-schema"
   ],
-  "bin": "./src/lib/cli.ts",
+  "bin": "build/main/bin/cli.js",
   "scripts": {
     "commit": "cz",
     "build": "run-p build:*",
