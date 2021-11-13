@@ -77,9 +77,13 @@
 				</a>
 				<ul>
 					<li><a href="#installing">Installation</a></li>
-					<li><a href="#examples">Examples</a><ul>
-							<li><a href="#es-module">ES Module</a></li>
-							<li><a href="#commonjs">CommonJS</a></li>
+					<li><a href="#usage">Usage</a><ul>
+							<li><a href="#using-the-cli">Using the CLI</a></li>
+							<li><a href="#programmatically">Programmatically</a><ul>
+									<li><a href="#es-module">ES Module</a></li>
+									<li><a href="#commonjs">CommonJS</a></li>
+								</ul>
+							</li>
 						</ul>
 					</li>
 				</ul>
@@ -92,8 +96,34 @@
 				<p>Using yarn:</p>
 				<pre><code class="language-bash">$ yarn add prisma-schema-sorter
 </code></pre>
-				<a href="#examples" id="examples" style="color: inherit; text-decoration: none;">
-					<h2>Examples</h2>
+				<a href="#usage" id="usage" style="color: inherit; text-decoration: none;">
+					<h1>Usage</h1>
+				</a>
+				<p>You can use the library in multiple ways as described below.</p>
+				<a href="#1--using-the-cli" id="1--using-the-cli" style="color: inherit; text-decoration: none;">
+					<h2>1- Using the CLI:</h2>
+				</a>
+				<p>With the CLI, you get the same functionality but with greater flexibility. You could run the command as a one-off every now and then from the terminal like this:
+					<br>
+				<br></p>
+				<pre><code class="language-bash">$ npx prisma-schema-sorter sort --schema=<span class="hljs-string">&quot;./prisma/schema.prisma&quot;</span>
+</code></pre>
+				<p>You could also keep the command as an npm script to run it as part of your workflow:</p>
+				<pre><code class="language-js">{
+    <span class="hljs-string">&quot;scripts&quot;</span>: {
+      <span class="hljs-string">&quot;sort-schema&quot;</span>: <span class="hljs-string">&quot;npx prisma-schema-sorter sort --schema=&#x27;./prisma/schema.prisma&#x27;&quot;</span>
+    }
+}
+</code></pre>
+				<p>Or even without the <code>npx</code> prefix:</p>
+				<pre><code class="language-js">{
+    <span class="hljs-string">&quot;scripts&quot;</span>: {
+      <span class="hljs-string">&quot;sort-schema&quot;</span>: <span class="hljs-string">&quot;prisma-schema-sorter sort --schema=&#x27;./prisma/schema.prisma&#x27;&quot;</span>
+    }
+}
+</code></pre>
+				<a href="#2--programmatically" id="2--programmatically" style="color: inherit; text-decoration: none;">
+					<h2>2- Programmatically:</h2>
 				</a>
 				<a href="#es-module" id="es-module" style="color: inherit; text-decoration: none;">
 					<h3>ES Module</h3>
