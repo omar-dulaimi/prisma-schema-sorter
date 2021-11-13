@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'fs-extra';
+import { readFile, writeFile } from 'fs/promises';
 
 import { PrismaSchemaSectionType } from '../types';
 
