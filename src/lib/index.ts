@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'fs-extra';
+import { promises as fs } from 'fs';
 
 import { PrismaSchemaSectionType } from '../types';
 
@@ -24,9 +24,7 @@ import { ascendingSorter } from './../helpers';
  */
 export const sortPrismaSchema = async (path: string) => {
   try {
-    const schema = await readFile(path, {
-      encoding: 'utf-8',
-    });
+    const schema = await fs.readFile(path, { encoding: 'utf-8' });
     const schemaSections: string[] = schema.split('\n\n');
     const generators: PrismaSchemaSectionType[] = [];
     const dataSources: PrismaSchemaSectionType[] = [];
@@ -61,7 +59,7 @@ export const sortPrismaSchema = async (path: string) => {
     models.sort(ascendingSorter);
     enums.sort(ascendingSorter);
     const sortedSections = [...generators, ...dataSources, ...models, ...enums];
-    await writeFile(
+    await fs.writeFile(
       path,
       sortedSections.map((section) => section.value).join('\n\n')
     );
