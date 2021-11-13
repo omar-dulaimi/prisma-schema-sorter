@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.3.4](https://github.com/omar-dulaimi/prisma-schema-sorter/compare/v1.3.3...v1.3.4) (2021-11-13)
+
+
+### Bug Fixes
+
+* **lib/index.ts:** replace fs-extra with fs ([94280da](https://github.com/omar-dulaimi/prisma-schema-sorter/commit/94280daaa67b9ee0f98feab96c72f4a3020cdc83)), closes [#1](https://github.com/omar-dulaimi/prisma-schema-sorter/issues/1)
+
 ### [1.3.3](https://github.com/omar-dulaimi/prisma-schema-sorter/compare/v1.3.2...v1.3.3) (2021-11-05)
 
 ### [1.3.2](https://github.com/omar-dulaimi/prisma-schema-sorter/compare/v1.3.1...v1.3.2) (2021-11-05)
