@@ -1,5 +1,7 @@
 import { promises as fs } from 'fs';
 
+import { getSchema, printSchema, Schema } from '@mrleebo/prisma-ast';
+
 import { PrismaSchemaSectionType } from '../types';
 
 import { ascendingSorter } from './../helpers';
@@ -25,30 +27,30 @@ import { ascendingSorter } from './../helpers';
 export const sortPrismaSchema = async (path: string) => {
   try {
     const schema = await fs.readFile(path, { encoding: 'utf-8' });
-    const schemaSections: string[] = schema.split('\n\n');
+    const jsonSchema = getSchema(schema);
     const generators: PrismaSchemaSectionType[] = [];
     const dataSources: PrismaSchemaSectionType[] = [];
     const models: PrismaSchemaSectionType[] = [];
     const enums: PrismaSchemaSectionType[] = [];
-    schemaSections.forEach((section) => {
-      if (section.includes('generator')) {
+    jsonSchema.list.forEach((section) => {
+      if (section.type === 'generator') {
         generators.push({
-          name: section.split(' ')[1].trim(),
+          name: section.name,
           value: section,
         });
-      } else if (section.includes('datasource')) {
+      } else if (section.type === 'datasource') {
         dataSources.push({
-          name: section.split(' ')[1].trim(),
+          name: section.name,
           value: section,
         });
-      } else if (section.includes('model')) {
+      } else if (section.type === 'model') {
         models.push({
-          name: section.split(' ')[1].trim(),
+          name: section.name,
           value: section,
         });
-      } else if (section.includes('enum')) {
+      } else if (section.type === 'enum') {
         enums.push({
-          name: section.split(' ')[1].trim(),
+          name: section.name,
           value: section,
         });
       }
@@ -59,10 +61,13 @@ export const sortPrismaSchema = async (path: string) => {
     models.sort(ascendingSorter);
     enums.sort(ascendingSorter);
     const sortedSections = [...generators, ...dataSources, ...models, ...enums];
-    await fs.writeFile(
-      path,
-      sortedSections.map((section) => section.value).join('\n\n')
-    );
+    const sortedJsonSchema = {
+      type: 'schema',
+      list: sortedSections.map((section) => section.value),
+    } as Schema;
+
+    const sortedSchema = printSchema(sortedJsonSchema);
+    await fs.writeFile(path, sortedSchema);
     console.log('Success.');
   } catch (error) {
     console.log('Failed.');
