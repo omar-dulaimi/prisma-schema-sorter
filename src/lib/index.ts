@@ -19,7 +19,7 @@ import { ascendingSorter } from './../helpers';
  * ### Example (commonjs)
  * ```js
  * var sortPrismaSchema = require('prisma-schema-sorter').sortPrismaSchema;
- * sortPrismaSchema().then();
+ * sortPrismaSchema("./prisma/schema.prisma").then();
  * // => Success
  * ```
  * @param path - path to the prisma schema
