@@ -1,5 +1,5 @@
 [![npm version](https://badge.fury.io/js/prisma-schema-sorter.svg)](https://badge.fury.io/js/prisma-schema-sorter)
-[![npm](https://img.shields.io/npm/dt/prisma-schema-sorter.svg)](https://www.npmjs.com/package/prisma-schema-sorter) 
+[![npm](https://img.shields.io/npm/dt/prisma-schema-sorter.svg)](https://www.npmjs.com/package/prisma-schema-sorter)
 [![npm](https://img.shields.io/npm/l/prisma-schema-sorter.svg)](LICENSE)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 
@@ -86,6 +86,6 @@ await sortPrismaSchema('./prisma/schema.prisma');
 
 ```js
 var sortPrismaSchema = require('prisma-schema-sorter').sortPrismaSchema;
-sortPrismaSchema().then();
+sortPrismaSchema('./prisma/schema.prisma').then();
 // => Success
 ```
