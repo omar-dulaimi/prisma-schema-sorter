@@ -7,7 +7,13 @@
 
 Prisma 2 tool to sort schema models, enums, generators and datasources
 
-> Full docs can be found here: [click here](https://omar-dulaimi.github.io/prisma-schema-sorter/index.html)
+> Full docs can be found here: [docs](https://omar-dulaimi.github.io/prisma-schema-sorter/index.html)
+
+<p align="center">
+  <a href="https://www.buymeacoffee.com/omardulaimi">
+    <img src="https://cdn.buymeacoffee.com/buttons/default-black.png" alt="Buy Me A Coffee" height="41" width="174">
+  </a>
+</p>
 
 ## Table of Contents
 
