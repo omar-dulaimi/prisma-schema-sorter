@@ -19,9 +19,9 @@ yargs(hideBin(process.argv))
     async (argv) => {
       let { schema } = argv;
       if (!schema) {
-        schema = './prisma/schema.prisma';
+        schema = './schema.prisma';
         console.log(
-          chalk.green.bold('Using default prisma path: ./prisma/schema.prisma')
+          chalk.green.bold('Using default prisma path: ./schema.prisma')
         );
       }
       await sortPrismaSchema(schema);

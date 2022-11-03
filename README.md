@@ -49,7 +49,7 @@ With the CLI, you get the same functionality but with greater flexibility. You c
 <br>
 
 ```bash
-$ npx prisma-schema-sorter sort --schema="./prisma/schema.prisma"
+$ npx prisma-schema-sorter sort --schema="./schema.prisma"
 ```
 
 You could also keep the command as an npm script to run it as part of your workflow:
@@ -57,7 +57,7 @@ You could also keep the command as an npm script to run it as part of your workf
 ```js
 {
     "scripts": {
-      "sort-schema": "npx prisma-schema-sorter sort --schema='./prisma/schema.prisma'"
+      "sort-schema": "npx prisma-schema-sorter sort --schema='./schema.prisma'"
     }
 }
 ```
@@ -67,7 +67,7 @@ Or even without the `npx` prefix:
 ```js
 {
     "scripts": {
-      "sort-schema": "prisma-schema-sorter sort --schema='./prisma/schema.prisma'"
+      "sort-schema": "prisma-schema-sorter sort --schema='./schema.prisma'"
     }
 }
 ```
@@ -78,7 +78,7 @@ Or even without the `npx` prefix:
 
 ```ts
 import { sortPrismaSchema } from 'prisma-schema-sorter';
-await sortPrismaSchema('./prisma/schema.prisma');
+await sortPrismaSchema('./schema.prisma');
 // => Success
 ```
 
@@ -86,6 +86,6 @@ await sortPrismaSchema('./prisma/schema.prisma');
 
 ```js
 var sortPrismaSchema = require('prisma-schema-sorter').sortPrismaSchema;
-sortPrismaSchema('./prisma/schema.prisma').then();
+sortPrismaSchema('./schema.prisma').then();
 // => Success
 ```

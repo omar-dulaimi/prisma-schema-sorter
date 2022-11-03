@@ -12,14 +12,14 @@ import { ascendingSorter } from './../helpers';
  * ### Example (es module)
  * ```js
  * import { sortPrismaSchema } from 'prisma-schema-sorter'
- * await sortPrismaSchema("./prisma/schema.prisma")
+ * await sortPrismaSchema("./schema.prisma")
  * // => Success
  * ```
  *
  * ### Example (commonjs)
  * ```js
  * var sortPrismaSchema = require('prisma-schema-sorter').sortPrismaSchema;
- * sortPrismaSchema("./prisma/schema.prisma").then();
+ * sortPrismaSchema("./schema.prisma").then();
  * // => Success
  * ```
  * @param path - path to the prisma schema
