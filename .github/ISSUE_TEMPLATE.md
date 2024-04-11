@@ -1,3 +1,5 @@
+Please consider supporting me for faster fixes, responses and features [Sponsor Me](https://github.com/sponsors/omar-dulaimi)
+
 - **I'm submitting a ...**
   [ ] bug report
   [ ] feature request
