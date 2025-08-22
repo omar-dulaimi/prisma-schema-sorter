@@ -21,10 +21,10 @@ yargs(hideBin(process.argv))
       if (!schema) {
         schema = './prisma/schema.prisma';
         console.log(
-          chalk.green.bold('Using default prisma path: ./prisma/schema.prisma')
+          chalk.green.bold('Using default prisma path: ./prisma/schema.prisma'),
         );
       }
       await sortPrismaSchema(schema);
-    }
+    },
   )
   .parse();

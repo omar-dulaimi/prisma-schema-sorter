@@ -1,91 +1,88 @@
+# Prisma Schema Sorter
+
 [![npm version](https://badge.fury.io/js/prisma-schema-sorter.svg)](https://badge.fury.io/js/prisma-schema-sorter)
 [![npm](https://img.shields.io/npm/dt/prisma-schema-sorter.svg)](https://www.npmjs.com/package/prisma-schema-sorter)
 [![npm](https://img.shields.io/npm/l/prisma-schema-sorter.svg)](LICENSE)
-[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
 
-# Prisma Schema Sorter
+A modern tool to sort Prisma schema elements alphabetically - models, enums, generators, and datasources. Keep your schema organized and maintainable.
 
-Prisma 2 tool to sort schema models, enums, generators and datasources
+## ✨ Features
 
-> Full docs can be found here: [docs](https://omar-dulaimi.github.io/prisma-schema-sorter/index.html)
+- 🔄 **Sorts all schema elements**: Models, enums, generators, and datasources
+- 🛠️ **CLI and programmatic usage**: Use it however fits your workflow
+- 📦 **Zero configuration**: Works out of the box
+- 🚀 **Fast and lightweight**: Built with performance in mind
+- 🔧 **TypeScript support**: Fully typed for better development experience
 
-<p align="center">
-  <a href="https://www.buymeacoffee.com/omardulaimi">
-    <img src="https://cdn.buymeacoffee.com/buttons/default-black.png" alt="Buy Me A Coffee" height="41" width="174">
-  </a>
-</p>
+> 📖 [Full documentation](https://omar-dulaimi.github.io/prisma-schema-sorter/index.html)
 
-## Table of Contents
 
-- [Installation](#installing)
-- [Usage](#usage)
-  - [Using the CLI](#using-the-cli)
-  - [Programmatically](#programmatically)
-    - [ES Module](#es-module)
-    - [CommonJS](#commonjs)
-
-## Installation
-
-Using npm:
+## 📦 Installation
 
 ```bash
-$ npm install prisma-schema-sorter
+npm install prisma-schema-sorter
 ```
-
-Using yarn:
 
 ```bash
-$ yarn add prisma-schema-sorter
+yarn add prisma-schema-sorter
 ```
-
-# Usage
-
-You can use the library in multiple ways as described below.
-
-## 1- Using the CLI:
-
-With the CLI, you get the same functionality but with greater flexibility. You could run the command as a one-off every now and then from the terminal like this:
-<br>
-<br>
 
 ```bash
-$ npx prisma-schema-sorter sort --schema="./prisma/schema.prisma"
+pnpm add prisma-schema-sorter
 ```
 
-You could also keep the command as an npm script to run it as part of your workflow:
+## 🚀 Usage
 
-```js
+### CLI Usage
+
+Run as a one-time command:
+
+```bash
+npx prisma-schema-sorter sort --schema="./prisma/schema.prisma"
+```
+
+Add to your package.json scripts:
+
+```json
 {
-    "scripts": {
-      "sort-schema": "npx prisma-schema-sorter sort --schema='./prisma/schema.prisma'"
-    }
+  "scripts": {
+    "sort-schema": "prisma-schema-sorter sort --schema='./prisma/schema.prisma'"
+  }
 }
 ```
 
-Or even without the `npx` prefix:
+Then run with:
 
-```js
-{
-    "scripts": {
-      "sort-schema": "prisma-schema-sorter sort --schema='./prisma/schema.prisma'"
-    }
-}
+```bash
+npm run sort-schema
 ```
 
-## 2- Programmatically:
+### Programmatic Usage
 
-### ES Module
+#### ES Modules / TypeScript
 
-```ts
+```typescript
 import { sortPrismaSchema } from 'prisma-schema-sorter';
+
 await sortPrismaSchema('./prisma/schema.prisma');
 // => Success
 ```
 
-### CommonJS
+#### CommonJS
 
-```js
-var sortPrismaSchema = require('prisma-schema-sorter').sortPrismaSchema;
-sortPrismaSchema('./prisma/schema.prisma').then();
-// => Success
+```javascript
+const { sortPrismaSchema } = require('prisma-schema-sorter');
+
+sortPrismaSchema('./prisma/schema.prisma').then(() => {
+  console.log('Schema sorted successfully!');
+});
 ```
+
+## 🤝 Contributing
+
+Contributions, issues and feature requests are welcome!
+
+## 📝 License
+
+This project is [MIT](LICENSE) licensed.

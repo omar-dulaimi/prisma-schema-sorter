@@ -67,7 +67,9 @@ export const sortPrismaSchema = async (path: string) => {
     } as Schema;
 
     const sortedSchema = printSchema(sortedJsonSchema);
-    await fs.writeFile(path, sortedSchema);
+    // Remove blank lines at the start and end of the file
+    const trimmedSchema = sortedSchema.replace(/^\s*\n/, '').trimEnd() + '\n';
+    await fs.writeFile(path, trimmedSchema);
     console.log('Success.');
   } catch (error) {
     console.log('Failed.');
