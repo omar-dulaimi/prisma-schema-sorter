@@ -22,7 +22,10 @@
     "fix": "run-s fix:*",
     "fix:prettier": "prettier \"src/**/*.ts\" --write",
     "fix:lint": "eslint src --ext .ts --fix",
-    "test": "run-s build test:*",
+    "test": "run-s build test:unit test:lint test:prettier test:spelling",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:unit:ui": "vitest --ui",
     "test:lint": "eslint src --ext .ts",
     "test:prettier": "prettier \"src/**/*.ts\" --list-different",
     "test:spelling": "cspell \"{README.md,.github/*.md,src/**/*.ts}\"",
@@ -50,6 +53,7 @@
     "@types/yargs": "^17.0.33",
     "@typescript-eslint/eslint-plugin": "^8.40.0",
     "@typescript-eslint/parser": "^8.40.0",
+    "@vitest/ui": "^3.2.4",
     "cspell": "^9.2.0",
     "cz-conventional-changelog": "^3.3.0",
     "eslint": "^9.34.0",
@@ -64,7 +68,8 @@
     "standard-version": "^9.5.0",
     "ts-node": "^10.9.2",
     "typedoc": "^0.28.10",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   },
   "files": [
     "build/main",
