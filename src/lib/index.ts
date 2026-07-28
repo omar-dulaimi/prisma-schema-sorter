@@ -36,79 +36,81 @@ const isSortedKind = (type: string): type is SortedKind =>
 type Section = PrismaSchemaSectionType & { readonly nodes: Block[] };
 
 /**
- * Sort the prisma schema found at the given path in ascending order.
+ * Sort the prisma schema found at the given path in ascending order, rewriting the file in place.
+ *
+ * Rejects if the schema cannot be read, parsed or written. It deliberately does not catch and log:
+ * a caller cannot act on a console message, and this used to swallow every error and resolve
+ * anyway, which left both programmatic callers and the CLI unable to tell a failed sort from a
+ * successful one. Reporting to a human is the CLI's job.
  *
  * ### Example (es module)
  * ```js
  * import { sortPrismaSchema } from 'prisma-schema-sorter'
  * await sortPrismaSchema("./prisma/schema.prisma")
- * // => Success
+ * // resolves once the file has been rewritten, throws otherwise
  * ```
  *
  * ### Example (commonjs)
  * ```js
  * var sortPrismaSchema = require('prisma-schema-sorter').sortPrismaSchema;
- * sortPrismaSchema("./prisma/schema.prisma").then();
- * // => Success
+ * sortPrismaSchema("./prisma/schema.prisma").catch((error) => {
+ *   process.exitCode = 1;
+ *   console.error(error);
+ * });
  * ```
  * @param path - path to the prisma schema
+ * @throws if the schema cannot be read, parsed or written
  */
-export const sortPrismaSchema = async (path: string) => {
-  try {
-    const schema = await fs.readFile(path, { encoding: 'utf-8' });
-    const jsonSchema = getSchema(schema);
-    const grouped = new Map<SortedKind, Section[]>(
-      SORTED_KINDS.map((kind) => [kind, [] as Section[]]),
-    );
-    // Anything the parser produces that is not a known section kind. Kept rather than dropped, so a
-    // schema using a feature this version predates still survives a sort.
-    const unrecognised: Block[] = [];
-    let pendingComments: Block[] = [];
+export const sortPrismaSchema = async (path: string): Promise<void> => {
+  const schema = await fs.readFile(path, { encoding: 'utf-8' });
+  const jsonSchema = getSchema(schema);
+  const grouped = new Map<SortedKind, Section[]>(
+    SORTED_KINDS.map((kind) => [kind, [] as Section[]]),
+  );
+  // Anything the parser produces that is not a known section kind. Kept rather than dropped, so a
+  // schema using a feature this version predates still survives a sort.
+  const unrecognised: Block[] = [];
+  let pendingComments: Block[] = [];
 
-    jsonSchema.list.forEach((section) => {
-      const type = (section as Block).type;
+  jsonSchema.list.forEach((section) => {
+    const type = (section as Block).type;
 
-      if (type === 'comment') {
-        pendingComments.push(section as Block);
-        return;
-      }
-      // Blank lines; printSchema puts spacing back between blocks.
-      if (type === 'break') {
-        return;
-      }
+    if (type === 'comment') {
+      pendingComments.push(section as Block);
+      return;
+    }
+    // Blank lines; printSchema puts spacing back between blocks.
+    if (type === 'break') {
+      return;
+    }
 
-      if (isSortedKind(type)) {
-        const named = section as Block & { name: string };
-        grouped.get(type)?.push({
-          name: named.name,
-          value: named,
-          nodes: [...pendingComments, named],
-        });
-      } else {
-        unrecognised.push(...pendingComments, section as Block);
-      }
-      pendingComments = [];
-    });
+    if (isSortedKind(type)) {
+      const named = section as Block & { name: string };
+      grouped.get(type)?.push({
+        name: named.name,
+        value: named,
+        nodes: [...pendingComments, named],
+      });
+    } else {
+      unrecognised.push(...pendingComments, section as Block);
+    }
+    pendingComments = [];
+  });
 
-    const sortedSections = SORTED_KINDS.flatMap((kind) => {
-      const sections = grouped.get(kind) ?? [];
-      sections.sort(ascendingSorter);
-      return sections.flatMap((section) => section.nodes);
-    });
+  const sortedSections = SORTED_KINDS.flatMap((kind) => {
+    const sections = grouped.get(kind) ?? [];
+    sections.sort(ascendingSorter);
+    return sections.flatMap((section) => section.nodes);
+  });
 
-    const sortedJsonSchema = {
-      type: 'schema',
-      // Trailing comments belong to no block, so they stay at the end rather than being discarded.
-      list: [...sortedSections, ...unrecognised, ...pendingComments],
-    } as Schema;
+  const sortedJsonSchema = {
+    type: 'schema',
+    // Trailing comments belong to no block, so they stay at the end rather than being discarded.
+    list: [...sortedSections, ...unrecognised, ...pendingComments],
+  } as Schema;
 
-    const sortedSchema = printSchema(sortedJsonSchema);
-    // Remove blank lines at the start and end of the file
-    const trimmedSchema = sortedSchema.replace(/^\s*\n/, '').trimEnd() + '\n';
-    await fs.writeFile(path, trimmedSchema);
-    console.log('Success.');
-  } catch (error) {
-    console.log('Failed.');
-    console.log(error);
-  }
+  const sortedSchema = printSchema(sortedJsonSchema);
+  // Remove blank lines at the start and end of the file
+  const trimmedSchema = sortedSchema.replace(/^\s*\n/, '').trimEnd() + '\n';
+  await fs.writeFile(path, trimmedSchema);
 };

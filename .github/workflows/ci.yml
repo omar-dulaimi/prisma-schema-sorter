@@ -74,7 +74,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ['22.x', '24.x']
+        # 20.19.0 is pinned exactly, and it is not here because Node 20 is current: it is the floor
+        # of the `engines.node` range this package declares, and the whole point is that the floor
+        # of a support claim has to be executed rather than asserted. `engines` previously said
+        # `>=18` while the packaged CLI died on Node 18 with ERR_REQUIRE_ESM, and it said so for as
+        # long as it did precisely because no job ever ran the bottom of the range. If the range
+        # changes, change this entry with it.
+        node-version: ['20.19.0', '22.x', '24.x']
     steps:
       - uses: actions/checkout@v5
 
@@ -191,10 +197,11 @@ jobs:
             exit 1
           fi
 
-          # Exit status alone proves nothing here: sortPrismaSchema catches every error, prints
-          # "Failed." and returns normally, so a total failure to read or write the schema still
-          # exits 0. Verified by hand against the 1.5.0 tarball. The printed output and the
-          # resulting file are what actually carry the signal.
+          # The output checks below used to be the only real signal, because up to 1.5.0 the exit
+          # status carried none: sortPrismaSchema caught every error, printed "Failed." and returned
+          # normally, so a total failure to read or write the schema still exited 0. That is fixed,
+          # and the negative cases in the next step are what hold it fixed. These two stay as a
+          # cross-check that status and output agree, which is cheap and catches a half-fix.
           case "$OUTPUT" in
             *Failed.*)
               echo "::error::The command reported 'Failed.' while still exiting 0."
@@ -235,11 +242,65 @@ jobs:
 
           echo "Packaged artifact sorted the schema correctly and preserved every section."
 
+      # A green exit status only means something if some invocation can make it red. Up to 1.5.0
+      # none could: every failure was caught, printed and swallowed, so `sort --schema=./nope.prisma`
+      # exited 0 and no script or CI step could tell it from a successful sort. These are the cases
+      # that would have caught that, run against the packaged artifact rather than the working tree.
+      - name: Fail loudly, not silently, against that install
+        working-directory: ${{ steps.consumer.outputs.dir }}
+        run: |
+          set -uo pipefail
+
+          FAILURES=0
+
+          require_status() {
+            local want="$1" label="$2"
+            shift 2
+            local output status
+            output="$("$@" 2>&1)"
+            status=$?
+            echo "--- $label -> exit $status ---"
+            echo "$output"
+            if [ "$want" = "nonzero" ] && [ "$status" -eq 0 ]; then
+              echo "::error::$label exited 0. A caller cannot distinguish this from a successful sort."
+              FAILURES=$((FAILURES + 1))
+            fi
+            if [ "$want" = "zero" ] && [ "$status" -ne 0 ]; then
+              echo "::error::$label exited $status, but it should have succeeded."
+              FAILURES=$((FAILURES + 1))
+            fi
+          }
+
+          # The schema cannot be read at all. This is the case that shipped broken.
+          require_status nonzero 'missing schema' \
+            npx prisma-schema-sorter sort --schema=./definitely-not-here.prisma
+          # Unreadable for a different reason, to show the exit code follows the error rather than
+          # one special-cased ENOENT branch.
+          require_status nonzero 'schema path is a directory' \
+            npx prisma-schema-sorter sort --schema=./prisma
+          # Sorted nothing and said nothing, which used to also exit 0.
+          require_status nonzero 'no command given' npx prisma-schema-sorter
+          require_status nonzero 'unknown command' npx prisma-schema-sorter srot
+          # A misspelled --schema used to be ignored, so the tool silently sorted the default path,
+          # or nothing, and reported success.
+          require_status nonzero 'misspelled option' \
+            npx prisma-schema-sorter sort --shcema=./prisma/schema.prisma
+          # The guard on the guard: --help must still be a success, so "nonzero" is not the answer to
+          # everything.
+          require_status zero '--help' npx prisma-schema-sorter --help
+
+          if [ "$FAILURES" -ne 0 ]; then
+            echo "::error::$FAILURES exit-status check(s) failed against the packaged artifact."
+            exit 1
+          fi
+          echo "Every failing invocation exited non-zero and the successful one exited 0."
+
       - name: Run the README programmatic example against that install
         working-directory: ${{ steps.consumer.outputs.dir }}
         # Covers the `main` and `typings` entrypoints, which the CLI path never touches. An
         # entrypoint that does not resolve is invisible until someone requires the installed
-        # package.
+        # package. It must also reject rather than log: a caller cannot read a console message, so
+        # logging and resolving anyway left programmatic users with no way to detect a failed sort.
         run: |
           set -euo pipefail
           OUTPUT="$(node -e "
@@ -247,19 +308,30 @@ jobs:
             if (typeof sortPrismaSchema !== 'function') {
               throw new Error('main entrypoint did not export sortPrismaSchema');
             }
-            sortPrismaSchema('./prisma/schema.prisma');
+            const assertRejects = async () => {
+              let rejected = false;
+              try {
+                await sortPrismaSchema('./definitely-not-here.prisma');
+              } catch {
+                rejected = true;
+              }
+              if (!rejected) {
+                throw new Error('sortPrismaSchema resolved on a schema it could not read');
+              }
+            };
+            assertRejects()
+              .then(() => sortPrismaSchema('./prisma/schema.prisma'))
+              .then(() => console.log('Programmatic entrypoint rejected on failure and resolved on success.'))
+              .catch((error) => {
+                console.error(error);
+                process.exitCode = 1;
+              });
           " 2>&1)"
           echo "$OUTPUT"
           case "$OUTPUT" in
-            *Failed.*)
-              echo "::error::The programmatic entrypoint reported 'Failed.'."
-              exit 1
-              ;;
-          esac
-          case "$OUTPUT" in
-            *Success.*) ;;
+            *'rejected on failure and resolved on success'*) ;;
             *)
-              echo "::error::The programmatic entrypoint printed no 'Success.'."
+              echo "::error::The programmatic entrypoint did not behave as documented."
               exit 1
               ;;
           esac
