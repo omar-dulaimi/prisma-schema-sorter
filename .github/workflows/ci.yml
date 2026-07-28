@@ -249,6 +249,13 @@ jobs:
       - name: Fail loudly, not silently, against that install
         working-directory: ${{ steps.consumer.outputs.dir }}
         run: |
+          # `set +e` is not redundant, it is the whole point. Actions runs a `run:` block as
+          # `bash -e {0}`, so errexit is already on before the first line executes and `set -uo`
+          # does not clear it. Every check below deliberately runs a command that SHOULD fail, and
+          # under errexit the first of them killed the script at the `output="$(...)"` assignment,
+          # before a single line of its own output was printed. That is why this passed locally,
+          # where plain bash has no -e, and failed on every runner.
+          set +e
           set -uo pipefail
 
           FAILURES=0
