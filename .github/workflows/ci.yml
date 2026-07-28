@@ -1,0 +1,266 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Build, test and lint on Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Only supported, non-EOL majors. Every step below is keyed to the matrix as a whole and
+        # nothing is conditioned on a single version, so dropping or adding a major here cannot
+        # leave a step silently skipped.
+        node-version: ['22.x', '24.x']
+    steps:
+      - uses: actions/checkout@v5
+
+      # This project is on npm with a committed package-lock.json, so there is no pnpm here at all
+      # and nothing to pin beyond the Node major.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - run: npm ci
+
+      # `build` is also the typecheck: both tsc projects compile the whole of src/ under
+      # `strict: true` with `declaration: true`, so a type error fails right here. The repo has no
+      # separate typecheck script and none is invented for CI.
+      - name: Build and typecheck
+        run: npm run build
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Lint
+        run: npm run test:lint
+
+      - name: Formatting
+        run: npm run test:prettier
+
+      - name: Spelling
+        run: npm run test:spelling
+
+  # The job that tests what users actually receive.
+  #
+  # Everything above runs against the working tree, where src/, node_modules/ and the repo's own
+  # tsconfig are all present. None of that ships. What ships is the tarball, filtered through the
+  # `files` allowlist in package.json, resolved against a dependency tree it does not control. A
+  # green suite and a broken package are entirely compatible states, and in this family of
+  # repositories the broken package is where the expensive defects have actually lived: a `files`
+  # rule that omitted a JSON file the code loaded at runtime and so crashed every consumer, a
+  # binary that could not start on a Node version CI never exercised, and a build output that was
+  # simply absent. Every one of those shipped green.
+  #
+  # So this job builds the tarball, installs it into an empty directory that is not the repo, and
+  # runs the command the README tells people to run.
+  package:
+    name: Packaged artifact on Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['22.x', '24.x']
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - run: npm ci
+
+      # build/ is gitignored, so without this the tarball ships nothing but metadata. That failure
+      # mode has happened before in a sibling repo and it is invisible from the source tree.
+      - name: Build
+        run: npm run build
+
+      - name: Pack
+        id: pack
+        run: |
+          set -euo pipefail
+          PACKDIR="$RUNNER_TEMP/pack"
+          rm -rf "$PACKDIR"
+          mkdir -p "$PACKDIR"
+          npm pack --pack-destination "$PACKDIR"
+          TARBALL="$(find "$PACKDIR" -maxdepth 1 -name '*.tgz' -print -quit)"
+          if [ -z "$TARBALL" ]; then
+            echo "::error::npm pack produced no tarball."
+            exit 1
+          fi
+          echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
+          echo "Packed $TARBALL, containing:"
+          tar -tzf "$TARBALL" | sort
+
+      - name: Install the tarball into an empty directory
+        id: consumer
+        run: |
+          set -euo pipefail
+          CONSUMER="$RUNNER_TEMP/consumer"
+          rm -rf "$CONSUMER"
+          mkdir -p "$CONSUMER/prisma"
+          cd "$CONSUMER"
+          npm init -y >/dev/null
+          # Installed from the tarball, outside the repo: this is the only way the `files`
+          # allowlist and the real dependency resolution get exercised.
+          npm install "${{ steps.pack.outputs.tarball }}"
+          echo "dir=$CONSUMER" >> "$GITHUB_OUTPUT"
+
+      - name: Run the README headline command against that install
+        working-directory: ${{ steps.consumer.outputs.dir }}
+        run: |
+          set -euo pipefail
+
+          # Deliberately out of order, and carrying a generator, a datasource, an enum and a
+          # comment, because the sorter rewrites the file from the sections it collected and
+          # anything it fails to collect is destroyed rather than left alone.
+          cat > prisma/schema.prisma <<'SCHEMA'
+          // keep this comment attached to Zebra
+          model Zebra {
+            id Int @id @default(autoincrement())
+          }
+
+          generator client {
+            provider = "prisma-client-js"
+          }
+
+          enum Status {
+            ACTIVE
+            INACTIVE
+          }
+
+          datasource db {
+            provider = "postgresql"
+            url      = env("DATABASE_URL")
+          }
+
+          model Apple {
+            id Int @id @default(autoincrement())
+          }
+          SCHEMA
+
+          # Never inlined into a test: an absent pattern yields an empty string, and `[ "" -lt 3 ]`
+          # is a usage error rather than a failed comparison, which an `if` would quietly absorb.
+          line_of() {
+            grep -n "^$1" prisma/schema.prisma | head -1 | cut -d: -f1 || true
+          }
+
+          require_ordered() {
+            local first_line second_line
+            first_line="$(line_of "$1")"
+            second_line="$(line_of "$2")"
+            if [ -z "$first_line" ] || [ -z "$second_line" ]; then
+              echo "::error::Expected both '$1' and '$2' in the schema; found [$first_line] and [$second_line]."
+              return 1
+            fi
+            [ "$first_line" -lt "$second_line" ]
+          }
+
+          # Guard the guard. If the fixture were already sorted, the ordering assertion below would
+          # pass without the package having done anything, and this job would be decoration.
+          if require_ordered 'model Apple' 'model Zebra'; then
+            echo "::error::Fixture is already sorted, so this job cannot detect a sorter that does nothing."
+            exit 1
+          fi
+
+          echo "--- npx prisma-schema-sorter sort --schema=./prisma/schema.prisma ---"
+          set +e
+          OUTPUT="$(npx prisma-schema-sorter sort --schema="./prisma/schema.prisma" 2>&1)"
+          STATUS=$?
+          set -e
+          echo "$OUTPUT"
+          echo "--- exit status: $STATUS ---"
+
+          if [ "$STATUS" -ne 0 ]; then
+            echo "::error::The README headline command exited $STATUS against the packaged artifact."
+            exit 1
+          fi
+
+          # Exit status alone proves nothing here: sortPrismaSchema catches every error, prints
+          # "Failed." and returns normally, so a total failure to read or write the schema still
+          # exits 0. Verified by hand against the 1.5.0 tarball. The printed output and the
+          # resulting file are what actually carry the signal.
+          case "$OUTPUT" in
+            *Failed.*)
+              echo "::error::The command reported 'Failed.' while still exiting 0."
+              exit 1
+              ;;
+          esac
+          case "$OUTPUT" in
+            *Success.*) ;;
+            *)
+              echo "::error::The command printed no 'Success.', so the sort did not complete."
+              exit 1
+              ;;
+          esac
+
+          echo "--- resulting schema ---"
+          cat prisma/schema.prisma
+
+          if ! require_ordered 'model Apple' 'model Zebra'; then
+            echo "::error::Models were not sorted: Apple should now precede Zebra."
+            exit 1
+          fi
+
+          # Nothing may be silently dropped on the way through. The sorter rebuilds the file from
+          # the sections it recognised, so a section it fails to collect is lost, not left alone.
+          for required in \
+            'model Apple' \
+            'model Zebra' \
+            'generator client' \
+            'datasource db' \
+            'enum Status' \
+            '// keep this comment attached to Zebra'
+          do
+            if ! grep -qF "$required" prisma/schema.prisma; then
+              echo "::error::The sorter destroyed a section it should have preserved: $required"
+              exit 1
+            fi
+          done
+
+          echo "Packaged artifact sorted the schema correctly and preserved every section."
+
+      - name: Run the README programmatic example against that install
+        working-directory: ${{ steps.consumer.outputs.dir }}
+        # Covers the `main` and `typings` entrypoints, which the CLI path never touches. An
+        # entrypoint that does not resolve is invisible until someone requires the installed
+        # package.
+        run: |
+          set -euo pipefail
+          OUTPUT="$(node -e "
+            const { sortPrismaSchema } = require('prisma-schema-sorter');
+            if (typeof sortPrismaSchema !== 'function') {
+              throw new Error('main entrypoint did not export sortPrismaSchema');
+            }
+            sortPrismaSchema('./prisma/schema.prisma');
+          " 2>&1)"
+          echo "$OUTPUT"
+          case "$OUTPUT" in
+            *Failed.*)
+              echo "::error::The programmatic entrypoint reported 'Failed.'."
+              exit 1
+              ;;
+          esac
+          case "$OUTPUT" in
+            *Success.*) ;;
+            *)
+              echo "::error::The programmatic entrypoint printed no 'Success.'."
+              exit 1
+              ;;
+          esac
+          echo "Programmatic entrypoint resolved and ran from the installed package."

@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  # Nothing is published unless the full suite AND the packaged-artifact job have both passed on
+  # this exact commit. A reusable workflow call succeeds only if every job inside it succeeded, so
+  # the pack-install-run check is a hard gate on release, not an advisory signal.
+  verify:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      # Required. @semantic-release/npm requests a GitHub OIDC token and exchanges it with npm for
+      # a short-lived publish credential. Without this the exchange fails and there is nothing to
+      # fall back on, because the npm account has "require 2FA and disallow tokens" enabled.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Node 24, not 22. The OIDC exchange needs npm >= 11.5.1; Node 22 still bundles npm 10.9.x,
+      # which has no trusted-publishing support and fails the exchange.
+      #
+      # Deliberately no `registry-url`: it writes an .npmrc containing an authToken placeholder,
+      # which gets in the way of the OIDC exchange below.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24.x'
+          cache: npm
+
+      - run: npm ci
+
+      # build/ is gitignored, so the publish would otherwise ship an empty package.
+      - name: Build
+        run: npm run build
+
+      # No npm token: the package is configured for Trusted Publishing with tokens disallowed, so
+      # auth is the OIDC exchange alone. Setting NPM_TOKEN here would write a conflicting .npmrc.
+      - name: Semantic release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run release
