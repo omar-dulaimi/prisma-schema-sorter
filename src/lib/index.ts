@@ -13,7 +13,14 @@ import { ascendingSorter } from './../helpers';
  * is lost: the file is rewritten from the collected sections alone. A schema with neither produces
  * byte-identical output to before, since the order of the original four is unchanged.
  */
-const SORTED_KINDS = ['generator', 'datasource', 'model', 'type', 'view', 'enum'] as const;
+const SORTED_KINDS = [
+  'generator',
+  'datasource',
+  'model',
+  'type',
+  'view',
+  'enum',
+] as const;
 
 type SortedKind = (typeof SORTED_KINDS)[number];
 
@@ -51,7 +58,7 @@ export const sortPrismaSchema = async (path: string) => {
     const schema = await fs.readFile(path, { encoding: 'utf-8' });
     const jsonSchema = getSchema(schema);
     const grouped = new Map<SortedKind, Section[]>(
-      SORTED_KINDS.map((kind) => [kind, [] as Section[]])
+      SORTED_KINDS.map((kind) => [kind, [] as Section[]]),
     );
     // Anything the parser produces that is not a known section kind. Kept rather than dropped, so a
     // schema using a feature this version predates still survives a sort.
